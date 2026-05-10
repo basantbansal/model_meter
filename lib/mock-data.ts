@@ -38,10 +38,10 @@ export const supportedTools: ToolName[] = [
 ];
 
 export const planOptions: Record<ToolName, string[]> = {
-  Cursor: ["Hobby", "Pro", "Business"],
-  "GitHub Copilot": ["Individual", "Business", "Enterprise"],
-  Claude: ["Free", "Pro", "Team"],
-  ChatGPT: ["Free", "Plus", "Team", "Enterprise"],
+  Cursor: ["Hobby", "Pro", "Pro+", "Teams", "Enterprise"],
+  "GitHub Copilot": ["Free", "Pro", "Pro+", "Business", "Enterprise"],
+  Claude: ["Free", "Pro", "Team", "Enterprise"],
+  ChatGPT: ["Free", "Plus", "Pro", "Business", "Enterprise"],
   Gemini: ["Free", "Advanced", "Workspace"],
   "OpenAI API": ["Pay as you go", "Scale tier", "Enterprise"],
   "Anthropic API": ["Build", "Scale", "Enterprise"],

@@ -7,7 +7,7 @@ import {
   Tooltip,
 } from "recharts";
 
-import type { ResultRecommendation } from "@/lib/mock-data";
+import type { AuditRecommendation } from "@/types/audit";
 
 const colors = ["#0f766e", "#14b8a6", "#f59e0b", "#64748b"];
 
@@ -20,7 +20,7 @@ const currency = new Intl.NumberFormat("en-US", {
 export function SavingsChart({
   data,
 }: {
-  data: ResultRecommendation[];
+  data: AuditRecommendation[];
 }) {
   const total = data.reduce((sum, item) => sum + item.savings, 0);
   const topTool = data.reduce((top, item) =>

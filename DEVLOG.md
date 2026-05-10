@@ -34,3 +34,24 @@ Still designing the audit engine architecture. Currently thinking through how to
 
 **Plan for tomorrow:**  
 Build the real audit engine starting with structured pricing metadata for Claude, ChatGPT, and Cursor. Replace static mock results with dynamically generated recommendations and savings calculations.
+
+
+## Day 3 — 2026-05-10
+
+**Hours worked:** 0.5
+
+**What I did:**  
+Refined the frontend UX and visual direction for ModelMeter. Reworked the product flow to keep the audit form directly on the homepage instead of using a separate audit route in order to reduce friction and make the experience feel more like a utility-focused SaaS product.
+
+Improved the results page by adding a savings visualization, structured breakdown tables, and more compact recommendation sections. Spent time evaluating how the audit engine should be structured and decided against using a fully LLM-driven recommendation system after reviewing the assignment requirements more carefully.
+
+The current direction is moving toward a deterministic pricing/rules engine with AI only used for generating human-readable summaries.
+
+**What I learned:**  
+The hardest part of the project is not frontend implementation but designing recommendation logic that feels believable, financially defensible, and trustworthy without becoming overly hardcoded or “AI magic.”
+
+**Blockers / what I'm stuck on:**  
+Still thinking through the cleanest structure for pricing metadata and recommendation evaluation logic.
+
+**Plan for tomorrow:**  
+Start implementing the real audit engine and connect Supabase for storing audit results and generating shareable result URLs.

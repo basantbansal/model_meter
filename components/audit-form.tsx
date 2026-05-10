@@ -6,11 +6,14 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ToolCard, fieldClass } from "@/components/tool-card";
+import { runAudit } from "@/lib/audit-engine";
+import { generateAuditSummary } from "@/lib/generate-summary";
 import {
   planOptions,
   primaryUseCases,
   type AuditTool,
 } from "@/lib/mock-data";
+import type { AuditInput, AuditUseCase, SupportedAuditTool } from "@/types/audit";
 
 function createTool(id: number): AuditTool {
   return {
@@ -27,6 +30,7 @@ export function AuditForm() {
   const [toolRows, setToolRows] = useState<AuditTool[]>([createTool(1)]);
   const [teamSize, setTeamSize] = useState("");
   const [useCase, setUseCase] = useState(primaryUseCases[0]);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   function updateTool(id: number, updates: Partial<AuditTool>) {
     setToolRows((currentRows) =>
@@ -61,8 +65,29 @@ export function AuditForm() {
     );
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setIsGenerating(true);
+
+    const input: AuditInput = {
+      teamSize: Math.max(1, Number(teamSize) || 1),
+      primaryUseCase: useCase as AuditUseCase,
+      tools: toolRows.map((row) => ({
+        tool: row.tool as SupportedAuditTool,
+        plan: row.plan,
+        monthlySpend: Math.max(0, Number(row.spend) || 0),
+        seats: Math.max(1, Number(row.seats) || 1),
+      })),
+    };
+
+    const result = runAudit(input);
+    const summary = await generateAuditSummary(result);
+
+    sessionStorage.setItem(
+      "modelmeter:audit-result",
+      JSON.stringify({ ...result, summary }),
+    );
+
     router.push("/results/demo");
   }
 
@@ -142,9 +167,10 @@ export function AuditForm() {
 
       <Button
         type="submit"
+        disabled={isGenerating}
         className="mt-5 h-12 w-full bg-teal-700 text-sm font-semibold text-white shadow-lg shadow-teal-900/10 hover:bg-teal-800"
       >
-        Generate Audit
+        {isGenerating ? "Generating..." : "Generate Audit"}
       </Button>
 
       <p className="mt-3 text-center text-xs text-stone-500">

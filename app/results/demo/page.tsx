@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,7 +14,9 @@ import {
 import { ResultsCard } from "@/components/results-card";
 import { SavingsChart } from "@/components/savings-chart";
 import { Button } from "@/components/ui/button";
-import { mockResults } from "@/lib/mock-data";
+import { createDemoAuditInput, runAudit } from "@/lib/audit-engine";
+import { generateAuditSummary } from "@/lib/generate-summary";
+import type { AuditResult } from "@/types/audit";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -20,6 +25,45 @@ const currency = new Intl.NumberFormat("en-US", {
 });
 
 export default function DemoResultsPage() {
+  const [auditResult, setAuditResult] = useState<AuditResult>(() =>
+    runAudit(createDemoAuditInput()),
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadAuditResult() {
+      const storedResult = sessionStorage.getItem("modelmeter:audit-result");
+
+      if (storedResult) {
+        try {
+          const parsedResult = JSON.parse(storedResult) as AuditResult;
+
+          if (mounted) {
+            setAuditResult(parsedResult);
+          }
+
+          return;
+        } catch {
+          sessionStorage.removeItem("modelmeter:audit-result");
+        }
+      }
+
+      const demoResult = runAudit(createDemoAuditInput());
+      const summary = await generateAuditSummary(demoResult);
+
+      if (mounted) {
+        setAuditResult({ ...demoResult, summary });
+      }
+    }
+
+    loadAuditResult();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-foreground">
       <div className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 lg:px-8">
@@ -54,11 +98,11 @@ export default function DemoResultsPage() {
                   Savings found
                 </div>
                 <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-                  You could save {currency.format(mockResults.monthlySavings)} per month.
+                  You could save {currency.format(auditResult.monthlySavings)} per month.
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-6 text-stone-500">
-                  Demo audit based on a {mockResults.teamSize}-person team with common AI
-                  subscriptions, coding tools, and API usage patterns.
+                  Audit based on a {auditResult.input.teamSize}-person team using AI
+                  for {auditResult.input.primaryUseCase.toLowerCase()}.
                 </p>
               </div>
 
@@ -68,21 +112,21 @@ export default function DemoResultsPage() {
                     Current monthly spend
                   </p>
                   <p className="mt-2 text-2xl font-semibold">
-                    {currency.format(mockResults.monthlySpend)}
+                    {currency.format(auditResult.monthlySpend)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-teal-200 bg-teal-50 p-4 text-teal-900">
                   <p className="text-xs font-medium">Estimated yearly savings</p>
                   <p className="mt-2 text-2xl font-semibold">
-                    {currency.format(mockResults.yearlySavings)}
+                    {currency.format(auditResult.yearlySavings)}
                   </p>
                 </div>
                 <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
                   <p className="text-xs font-medium text-stone-500">
-                    Confidence
+                    Primary savings driver
                   </p>
-                  <p className="mt-2 text-2xl font-semibold">
-                    {mockResults.confidence}%
+                  <p className="mt-2 text-lg font-semibold leading-6">
+                    {auditResult.primarySavingsDriver}
                   </p>
                 </div>
               </div>
@@ -92,7 +136,7 @@ export default function DemoResultsPage() {
 
         <section className="grid gap-5 pb-12 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <SavingsChart data={mockResults.recommendations} />
+            <SavingsChart data={auditResult.recommendations} />
 
             <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
               <div className="border-b border-stone-100 px-5 py-4">
@@ -112,7 +156,7 @@ export default function DemoResultsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-stone-100">
-                    {mockResults.recommendations.map((item) => (
+                    {auditResult.recommendations.map((item) => (
                       <tr key={item.tool}>
                         <td className="px-5 py-3 font-medium">{item.tool}</td>
                         <td className="px-5 py-3 text-stone-500">
@@ -144,7 +188,7 @@ export default function DemoResultsPage() {
             </div>
 
             <div className="grid gap-4">
-              {mockResults.recommendations.map((recommendation) => (
+              {auditResult.recommendations.map((recommendation) => (
                 <ResultsCard
                   key={recommendation.tool}
                   recommendation={recommendation}
@@ -162,7 +206,7 @@ export default function DemoResultsPage() {
                 AI-generated summary
               </h2>
               <p className="mt-3 text-sm leading-6 text-stone-500">
-                {mockResults.summary}
+                {auditResult.summary}
               </p>
               <div className="mt-5 space-y-3 text-sm">
                 {[
