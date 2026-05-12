@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { ToolCard, fieldClass } from "@/components/tool-card";
+import { createAudit } from "@/lib/audits";
 import { runAudit } from "@/lib/audit-engine";
 import { generateAuditSummary } from "@/lib/generate-summary";
 import {
@@ -31,6 +32,7 @@ export function AuditForm() {
   const [teamSize, setTeamSize] = useState("");
   const [useCase, setUseCase] = useState(primaryUseCases[0]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   function updateTool(id: number, updates: Partial<AuditTool>) {
     setToolRows((currentRows) =>
@@ -68,27 +70,34 @@ export function AuditForm() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsGenerating(true);
+    setSubmitError("");
 
-    const input: AuditInput = {
-      teamSize: Math.max(1, Number(teamSize) || 1),
-      primaryUseCase: useCase as AuditUseCase,
-      tools: toolRows.map((row) => ({
-        tool: row.tool as SupportedAuditTool,
-        plan: row.plan,
-        monthlySpend: Math.max(0, Number(row.spend) || 0),
-        seats: Math.max(1, Number(row.seats) || 1),
-      })),
-    };
+    try {
+      const input: AuditInput = {
+        teamSize: Math.max(1, Number(teamSize) || 1),
+        primaryUseCase: useCase as AuditUseCase,
+        tools: toolRows.map((row) => ({
+          tool: row.tool as SupportedAuditTool,
+          plan: row.plan,
+          monthlySpend: Math.max(0, Number(row.spend) || 0),
+          seats: Math.max(1, Number(row.seats) || 1),
+        })),
+      };
 
-    const result = runAudit(input);
-    const summary = await generateAuditSummary(result);
+      const result = runAudit(input);
+      const summary = await generateAuditSummary(result);
+      const auditId = await createAudit({ ...result, summary });
 
-    sessionStorage.setItem(
-      "modelmeter:audit-result",
-      JSON.stringify({ ...result, summary }),
-    );
+      router.push(`/results/${auditId}`);
+    } catch (error) {
+      const detail =
+        error instanceof Error && process.env.NODE_ENV === "development"
+          ? ` ${error.message}`
+          : "";
 
-    router.push("/results/demo");
+      setSubmitError(`We could not save this audit.${detail}`);
+      setIsGenerating(false);
+    }
   }
 
   return (
@@ -173,8 +182,14 @@ export function AuditForm() {
         {isGenerating ? "Generating..." : "Generate Audit"}
       </Button>
 
+      {submitError ? (
+        <p className="mt-3 text-center text-xs font-medium text-red-600">
+          {submitError}
+        </p>
+      ) : null}
+
       <p className="mt-3 text-center text-xs text-stone-500">
-        Demo results use realistic sample benchmarks.
+        Results are saved to a shareable report link.
       </p>
     </form>
   );

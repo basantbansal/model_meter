@@ -36,22 +36,45 @@ Still designing the audit engine architecture. Currently thinking through how to
 Build the real audit engine starting with structured pricing metadata for Claude, ChatGPT, and Cursor. Replace static mock results with dynamically generated recommendations and savings calculations.
 
 
+
 ## Day 3 — 2026-05-10
 
 **Hours worked:** 0.5
 
 **What I did:**  
-Refined the frontend UX and visual direction for ModelMeter. Reworked the product flow to keep the audit form directly on the homepage instead of using a separate audit route in order to reduce friction and make the experience feel more like a utility-focused SaaS product.
+Implemented the first real deterministic audit engine for ModelMeter and replaced the earlier static mock recommendations with dynamically generated audit results. Added structured pricing metadata and recommendation evaluation logic focused on SaaS spend optimization patterns such as overlapping assistant subscriptions, oversized collaboration plans, and duplicated tooling spend.
 
-Improved the results page by adding a savings visualization, structured breakdown tables, and more compact recommendation sections. Spent time evaluating how the audit engine should be structured and decided against using a fully LLM-driven recommendation system after reviewing the assignment requirements more carefully.
+Refined the recommendation wording to feel more operational and financially believable instead of overly AI-generated. Removed weaker pseudo-analytical elements like unsupported confidence scoring and shifted the product tone toward a more trustworthy finance/productivity style.
 
-The current direction is moving toward a deterministic pricing/rules engine with AI only used for generating human-readable summaries.
+Also improved the results presentation with clearer savings concentration breakdowns and more grounded AI-generated summaries.
 
 **What I learned:**  
-The hardest part of the project is not frontend implementation but designing recommendation logic that feels believable, financially defensible, and trustworthy without becoming overly hardcoded or “AI magic.”
+The biggest challenge is designing recommendation logic that feels credible and operationally realistic without overcomplicating the system. Deterministic evaluation combined with AI-generated explanation layers feels significantly more trustworthy than allowing LLMs to make the core financial decisions themselves.
 
 **Blockers / what I'm stuck on:**  
-Still thinking through the cleanest structure for pricing metadata and recommendation evaluation logic.
+The recommendation engine still needs more nuanced differentiation between overlapping tools and workflows so that recommendations feel less repetitive across providers.
 
 **Plan for tomorrow:**  
-Start implementing the real audit engine and connect Supabase for storing audit results and generating shareable result URLs.
+Integrate Supabase for storing audit results and generating shareable result URLs. Begin implementing lead capture and persistence flow.
+
+
+
+## Day 4 — 2026-05-10
+
+**Hours worked:** 0.5
+
+**What I did:**  
+Integrated Supabase persistence into ModelMeter and replaced the temporary static results route with dynamic shareable audit URLs. The audit flow now saves generated audit results, recommendations, savings calculations, and chart data into Supabase and redirects users to persistent `/results/[id]` pages.
+
+Implemented dynamic report loading so audit results survive refreshes and can be shared publicly through unique URLs without requiring authentication. Kept sensitive lead-related information out of the public report payload and focused the shared pages only on optimization findings, savings data, and recommendations.
+
+Also cleaned up the architecture around audit result types and database interactions to make the system feel more like a real SaaS utility instead of a frontend-only demo.
+
+**What I learned:**  
+Persistence and dynamic routing significantly change how “real” the product feels. The project now behaves much more like an actual SaaS workflow where generated reports can be revisited and shared instead of existing only in temporary frontend state.
+
+**Blockers / what I'm stuck on:**  
+Still need to implement lead capture, transactional email flow, and abuse protection. The recommendation engine could also become more nuanced in differentiating overlapping tool usage patterns between providers.
+
+**Plan for tomorrow:**  
+Implement lead capture flow with Supabase storage and transactional email support. Add basic abuse protection and start preparing the project for deployment.

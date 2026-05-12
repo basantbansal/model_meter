@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -14,8 +13,6 @@ import {
 import { ResultsCard } from "@/components/results-card";
 import { SavingsChart } from "@/components/savings-chart";
 import { Button } from "@/components/ui/button";
-import { createDemoAuditInput, runAudit } from "@/lib/audit-engine";
-import { generateAuditSummary } from "@/lib/generate-summary";
 import type { AuditResult } from "@/types/audit";
 
 const currency = new Intl.NumberFormat("en-US", {
@@ -24,45 +21,20 @@ const currency = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-export default function DemoResultsPage() {
-  const [auditResult, setAuditResult] = useState<AuditResult>(() =>
-    runAudit(createDemoAuditInput()),
-  );
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadAuditResult() {
-      const storedResult = sessionStorage.getItem("modelmeter:audit-result");
-
-      if (storedResult) {
-        try {
-          const parsedResult = JSON.parse(storedResult) as AuditResult;
-
-          if (mounted) {
-            setAuditResult(parsedResult);
-          }
-
-          return;
-        } catch {
-          sessionStorage.removeItem("modelmeter:audit-result");
-        }
-      }
-
-      const demoResult = runAudit(createDemoAuditInput());
-      const summary = await generateAuditSummary(demoResult);
-
-      if (mounted) {
-        setAuditResult({ ...demoResult, summary });
-      }
+export function ResultsDashboard({
+  auditResult,
+  shareUrl,
+}: {
+  auditResult: AuditResult;
+  shareUrl: string;
+}) {
+  async function copyShareUrl() {
+    if (!navigator.clipboard) {
+      return;
     }
 
-    loadAuditResult();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    await navigator.clipboard.writeText(shareUrl);
+  }
 
   return (
     <main className="min-h-screen bg-[#f7f4ef] text-foreground">
@@ -76,7 +48,12 @@ export default function DemoResultsPage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="hidden bg-background sm:inline-flex">
+            <Button
+              type="button"
+              variant="outline"
+              className="hidden bg-background sm:inline-flex"
+              onClick={copyShareUrl}
+            >
               <Share2 className="size-4" />
               Share
             </Button>
@@ -101,8 +78,8 @@ export default function DemoResultsPage() {
                   You could save {currency.format(auditResult.monthlySavings)} per month.
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-6 text-stone-500">
-                  Audit based on a {auditResult.input.teamSize}-person team using AI
-                  for {auditResult.input.primaryUseCase.toLowerCase()}.
+                  Shareable AI spend report with savings, recommendations, and
+                  tool-level benchmarks.
                 </p>
               </div>
 
