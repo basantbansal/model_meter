@@ -1,19 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { ResultsDashboard } from "@/components/results-dashboard";
 import { Button } from "@/components/ui/button";
 import { getAuditById } from "@/lib/audits";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
-function getBaseUrl() {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ??
-    "http://localhost:3000"
-  ).replace(/\/$/, "");
-}
+const currency = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
 
 function ResultsError({ message }: { message: string }) {
   return (
@@ -75,5 +75,51 @@ export default async function ResultsPage({
     );
   }
 
-  return <ResultsDashboard auditResult={result} shareUrl={`${getBaseUrl()}/results/${id}`} />;
+  return (
+    <ResultsDashboard
+      auditId={id}
+      auditResult={result}
+      shareUrl={`${getSiteUrl()}/results/${id}`}
+    />
+  );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const { result } = await getAuditById(id);
+
+  if (!result) {
+    return {
+      title: "Report unavailable",
+      description: "This ModelMeter savings report could not be loaded.",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${currency.format(result.yearlySavings)} in potential AI spend savings`;
+  const description = `ModelMeter found ${currency.format(result.yearlySavings)} per year in modeled AI spend savings, led by ${result.primarySavingsDriver}.`;
+  const reportUrl = `${getSiteUrl()}/results/${id}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: reportUrl },
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      url: reportUrl,
+      images: [`${reportUrl}/opengraph-image`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${reportUrl}/twitter-image`],
+    },
+  };
 }

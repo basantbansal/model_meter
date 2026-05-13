@@ -14,18 +14,11 @@ const codingTools = new Set(["Cursor", "GitHub Copilot", "Windsurf"]);
 const generalAssistants = new Set(["Claude", "ChatGPT", "Gemini"]);
 const apiTools = new Set(["OpenAI API", "Anthropic API"]);
 
-type PlanScore = {
-  plan: PlanMetadata;
-  score: number;
-  reasons: string[];
-};
-
 type EvaluationContext = {
   input: AuditInput;
   tool: AuditToolInput;
   currentPlan?: PlanMetadata;
   recommendedPlan?: PlanMetadata;
-  selectedTools: string[];
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -71,7 +64,11 @@ function evaluateUseCaseFit(plan: PlanMetadata, input: AuditInput) {
     score += 12;
   }
 
-  if (input.primaryUseCase !== "Engineering productivity" && plan.codingFocused) {
+  if (
+    input.primaryUseCase !== "Engineering productivity" &&
+    input.primaryUseCase !== "Mixed usage" &&
+    plan.codingFocused
+  ) {
     score -= 12;
   }
 
@@ -129,7 +126,7 @@ function evaluateSeatEfficiency(plan: PlanMetadata, tool: AuditToolInput) {
   return 4;
 }
 
-function scorePlan(input: AuditInput, tool: AuditToolInput, plan: PlanMetadata): PlanScore {
+function scorePlan(input: AuditInput, tool: AuditToolInput, plan: PlanMetadata) {
   const score =
     evaluateTeamFit(plan, input) +
     evaluateUseCaseFit(plan, input) +
@@ -140,12 +137,6 @@ function scorePlan(input: AuditInput, tool: AuditToolInput, plan: PlanMetadata):
   return {
     plan,
     score,
-    reasons: [
-      "team-size fit",
-      "workflow fit",
-      "governance fit",
-      "price discipline",
-    ],
   };
 }
 
@@ -345,7 +336,8 @@ function evaluateUseCaseFitForTool(context: EvaluationContext) {
   if (
     currentPlan?.codingFocused &&
     input.primaryUseCase !== "Engineering productivity" &&
-    input.primaryUseCase !== "Company-wide AI access"
+    input.primaryUseCase !== "Company-wide AI access" &&
+    input.primaryUseCase !== "Mixed usage"
   ) {
     return [
       makeFinding(
@@ -382,6 +374,113 @@ function evaluateSeatEfficiencyForTool(context: EvaluationContext) {
       `${tool.seats} seats were entered for a ${input.teamSize}-person team. This suggests inactive, duplicate, or unassigned seats may exist.`,
       excessSeats * unitPrice,
       excessSeats >= 10 ? 18 : 10,
+    ),
+  ];
+}
+
+function evaluateSpendAgainstPlanBenchmark(context: EvaluationContext) {
+  const { tool, currentPlan } = context;
+
+  if (!currentPlan || currentPlan.monthlyPrice <= 0 || tool.monthlySpend <= 0) {
+    return [];
+  }
+
+  const catalogBenchmark = currentPlan.monthlyPrice * tool.seats;
+  const variance = tool.monthlySpend - catalogBenchmark;
+
+  if (variance <= Math.max(12, catalogBenchmark * 0.18)) {
+    return [];
+  }
+
+  const ratio = tool.monthlySpend / catalogBenchmark;
+
+  if (ratio >= 9 && ratio <= 15) {
+    return [
+      makeFinding(
+        context,
+        "spend-normalization",
+        "High",
+        "Spend may be annualized in a monthly field",
+        `${tool.tool} ${currentPlan.planName} benchmarks at about ${catalogBenchmark} dollars per month for ${tool.seats} seat${tool.seats === 1 ? "" : "s"}, while ${tool.monthlySpend} dollars was entered. That is close to an annualized total, so validate billing period normalization before counting this as recurring monthly waste.`,
+        Math.round(variance * 0.85),
+        18,
+      ),
+    ];
+  }
+
+  return [
+    makeFinding(
+      context,
+      "spend-normalization",
+      variance >= 250 ? "High" : "Medium",
+      "Reported spend exceeds the plan benchmark",
+      `${tool.tool} ${currentPlan.planName} implies roughly ${catalogBenchmark} dollars per month for ${tool.seats} seat${tool.seats === 1 ? "" : "s"}, while ${tool.monthlySpend} dollars was entered. Confirm annual-vs-monthly normalization, add-ons, or unused paid seats before treating the gap as durable spend.`,
+      Math.round(variance * 0.65),
+      variance >= 250 ? 16 : 10,
+    ),
+  ];
+}
+
+function evaluateSoloUsageContext(context: EvaluationContext) {
+  const { input, tool, currentPlan } = context;
+
+  if (
+    input.teamSize !== 1 ||
+    tool.seats !== 1 ||
+    !codingTools.has(tool.tool) ||
+    !currentPlan?.codingFocused
+  ) {
+    return [];
+  }
+
+  if (currentPlan.usageIntensity === "heavy") {
+    return [
+      makeFinding(
+        context,
+        "premium-tier",
+        "Low",
+        "Premium solo coding tier needs usage proof",
+        `${tool.tool} ${currentPlan.planName} can be rational for a solo developer with sustained agent-heavy usage, but the spend should be tied to a clear workflow need rather than defaulting to the highest individual tier.`,
+        Math.round(tool.monthlySpend * 0.12),
+        8,
+      ),
+    ];
+  }
+
+  return [
+    makeFinding(
+      context,
+      "workflow-fit",
+      "Low",
+      "Solo coding plan is near the benchmark",
+      `${tool.tool} ${currentPlan.planName} is a plausible fit for one active developer. There is no modeled plan downgrade here; the practical control is avoiding overlapping coding assistants or paying for a higher tier without a repeatable usage reason.`,
+      0,
+      4,
+    ),
+  ];
+}
+
+function evaluateApiSpendControls(context: EvaluationContext) {
+  const { tool, input } = context;
+
+  if (!apiTools.has(tool.tool)) {
+    return [];
+  }
+
+  const severity: RecommendationSeverity =
+    tool.monthlySpend >= 500 || input.primaryUseCase === "Product automation"
+      ? "Medium"
+      : "Low";
+
+  return [
+    makeFinding(
+      context,
+      "workflow-fit",
+      severity,
+      "API spend needs workload ownership",
+      `${tool.tool} spend is usage-driven rather than seat-driven. Assign an owner, tag production versus experimentation workloads, and review budget alerts before interpreting month-to-month variance as structural waste.`,
+      tool.monthlySpend >= 500 ? Math.round(tool.monthlySpend * 0.06) : 0,
+      tool.monthlySpend >= 500 ? 9 : 5,
     ),
   ];
 }
@@ -443,11 +542,23 @@ function buildRecommendationText(
     recommendedPlan.monthlyPrice > 0;
 
   if (savings <= 0 || !topFinding) {
+    if (topFinding?.category === "workflow-fit") {
+      return {
+        title: topFinding.title,
+        optimizationAction: codingTools.has(tool.tool)
+          ? "Keep the current tier, but review overlap before adding another coding assistant"
+          : "Keep the current setup and review usage ownership monthly",
+        explanation: topFinding.detail,
+      };
+    }
+
     return {
       title: `${tool.tool} looks reasonably aligned`,
-      optimizationAction: "Maintain current plan and review seat activity monthly",
+      optimizationAction: codingTools.has(tool.tool)
+        ? "Maintain the current tier and verify that usage stays tied to active development work"
+        : "Maintain current plan and review seat activity monthly",
       explanation:
-        "Current spend is close to the pricing benchmark for the provided team size and use case. Continue reviewing assigned seats before renewals.",
+        "Current spend is close to the visible pricing benchmark for the provided team size and workflow. The main control is disciplined renewal review rather than forcing a downgrade that the inputs do not justify.",
     };
   }
 
@@ -456,6 +567,18 @@ function buildRecommendationText(
       title: "Reduce inactive or unassigned seats",
       optimizationAction: "Remove excess seats before the next billing cycle",
       explanation: `${topFinding.detail} Savings come from lowering billed seat count, not changing the core plan.`,
+    };
+  }
+
+  if (topFinding.category === "spend-normalization") {
+    return {
+      title:
+        topFinding.title === "Spend may be annualized in a monthly field"
+          ? "Normalize billing period before acting"
+          : "Reconcile spend against plan benchmark",
+      optimizationAction:
+        "Confirm monthly versus annual billing, add-ons, and seat count before using this estimate in a renewal discussion",
+      explanation: `${topFinding.detail} Projected spend is benchmarked conservatively against published per-seat pricing, so the first operational step is reconciliation rather than an immediate downgrade.`,
     };
   }
 
@@ -468,6 +591,15 @@ function buildRecommendationText(
         ? "Assign one primary coding assistant and limit secondary seats"
         : "Consolidate light users onto fewer general-purpose assistants",
       explanation: `${topFinding.detail} Savings come from reducing duplicate coverage and lightly used seats.`,
+    };
+  }
+
+  if (topFinding.category === "workflow-fit" && apiTools.has(tool.tool)) {
+    return {
+      title: "Put API spend behind workload controls",
+      optimizationAction:
+        "Set owners, budget alerts, and workload tags for production versus experiments",
+      explanation: `${topFinding.detail} Savings are conservative because API optimization depends on actual traffic patterns, not subscription rightsizing alone.`,
     };
   }
 
@@ -489,6 +621,19 @@ function buildRecommendationText(
     };
   }
 
+  if (
+    topFinding.category === "premium-tier" &&
+    tool.seats === 1 &&
+    codingTools.has(tool.tool)
+  ) {
+    return {
+      title: "Validate the premium solo coding tier",
+      optimizationAction:
+        "Keep the higher tier only if agent-heavy usage materially shortens active development work",
+      explanation: `${topFinding.detail} The modeled savings assume the lighter tier can cover normal usage without recurring workflow friction.`,
+    };
+  }
+
   return {
     title: topFinding.title,
     optimizationAction: "Review usage ownership and reduce avoidable spend",
@@ -504,7 +649,6 @@ function evaluateTool(input: AuditInput, tool: AuditToolInput) {
     tool,
     currentPlan,
     recommendedPlan,
-    selectedTools: input.tools.map((item) => item.tool),
   };
   const findings = [
     ...evaluatePlanFit(context),
@@ -512,6 +656,9 @@ function evaluateTool(input: AuditInput, tool: AuditToolInput) {
     ...evaluateToolOverlap(context),
     ...evaluateUseCaseFitForTool(context),
     ...evaluateSeatEfficiencyForTool(context),
+    ...evaluateSpendAgainstPlanBenchmark(context),
+    ...evaluateSoloUsageContext(context),
+    ...evaluateApiSpendControls(context),
   ];
   const projectedSpend = getProjectedSpend(tool, currentPlan, recommendedPlan, findings);
   const savings = normalizeMoney(tool.monthlySpend - projectedSpend);
@@ -586,18 +733,5 @@ export function runAudit(input: AuditInput): AuditResult {
     summary: "",
     findings,
     recommendations,
-  };
-}
-
-export function createDemoAuditInput(): AuditInput {
-  return {
-    teamSize: 32,
-    primaryUseCase: "Engineering productivity",
-    tools: [
-      { tool: "Cursor", plan: "Teams", monthlySpend: 960, seats: 24 },
-      { tool: "ChatGPT", plan: "Business", monthlySpend: 900, seats: 30 },
-      { tool: "Claude", plan: "Team", monthlySpend: 650, seats: 18 },
-      { tool: "GitHub Copilot", plan: "Business", monthlySpend: 800, seats: 32 },
-    ],
   };
 }

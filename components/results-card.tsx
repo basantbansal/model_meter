@@ -20,6 +20,8 @@ export function ResultsCard({
 }: {
   recommendation: AuditRecommendation;
 }) {
+  const topFinding = recommendation.findings[0];
+
   return (
     <article className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-4">
@@ -44,7 +46,7 @@ export function ResultsCard({
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+      <div className="mt-4 grid gap-2 text-sm sm:grid-cols-3">
         <div className="rounded-xl bg-stone-50 p-3">
           <p className="text-xs text-stone-500">Current</p>
           <p className="mt-1 font-semibold">
@@ -60,7 +62,7 @@ export function ResultsCard({
         <div className="rounded-xl bg-teal-50 p-3 text-teal-800">
           <p className="flex items-center gap-1 text-xs">
             <ArrowDownRight className="size-3.5" />
-            Saves
+            {recommendation.savings > 0 ? "Saves" : "Review"}
           </p>
           <p className="mt-1 font-semibold">
             {currency.format(recommendation.savings)}
@@ -72,8 +74,16 @@ export function ResultsCard({
         <div
           className="h-full rounded-full bg-teal-700"
           style={{ width: `${recommendation.share}%` }}
+          aria-hidden="true"
         />
       </div>
+
+      {topFinding ? (
+        <p className="mt-3 rounded-xl bg-stone-50 px-3 py-2 text-xs leading-5 text-stone-500">
+          <span className="font-medium text-stone-700">Assumption:</span>{" "}
+          {topFinding.detail}
+        </p>
+      ) : null}
     </article>
   );
 }

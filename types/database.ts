@@ -70,6 +70,30 @@ export type AuditInsert = {
 
 export type AuditUpdate = Partial<AuditInsert>;
 
+export type LeadRow = {
+  id: string;
+  created_at: string;
+  audit_id: string;
+  email: string;
+  company_name: string | null;
+  role: string | null;
+  team_size: number | null;
+  email_status: "sent" | "skipped" | "failed";
+};
+
+export type LeadInsert = {
+  id?: string;
+  created_at?: string;
+  audit_id: string;
+  email: string;
+  company_name?: string | null;
+  role?: string | null;
+  team_size?: number | null;
+  email_status?: LeadRow["email_status"];
+};
+
+export type LeadUpdate = Partial<LeadInsert>;
+
 export type Database = {
   public: {
     Tables: {
@@ -77,6 +101,12 @@ export type Database = {
         Row: AuditRow;
         Insert: AuditInsert;
         Update: AuditUpdate;
+        Relationships: [];
+      };
+      leads: {
+        Row: LeadRow;
+        Insert: LeadInsert;
+        Update: LeadUpdate;
         Relationships: [];
       };
     };

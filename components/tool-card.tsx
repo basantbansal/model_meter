@@ -8,7 +8,7 @@ import {
   supportedTools,
   type AuditTool,
   type ToolName,
-} from "@/lib/mock-data";
+} from "@/lib/audit-options";
 import { cn } from "@/lib/utils";
 
 const fieldClass =

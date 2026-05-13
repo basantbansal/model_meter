@@ -13,6 +13,8 @@ export type AuditUseCase =
   | "Customer support"
   | "Content and marketing"
   | "Data analysis"
+  | "Research"
+  | "Mixed usage"
   | "Product automation"
   | "Company-wide AI access";
 
@@ -40,7 +42,8 @@ export type WasteCategory =
   | "enterprise-overkill"
   | "premium-tier"
   | "workflow-fit"
-  | "unpriced-tool";
+  | "unpriced-tool"
+  | "spend-normalization";
 
 export type UsageIntensity = "light" | "standard" | "heavy" | "enterprise";
 

@@ -1,80 +1,48 @@
-## Day 1 — 2026-05-08
+## Day 1 — 2026-05-07
+**Hours worked:** 0  
+**What I did:** Read the assignment at a high level and decided not to start manually coding because I had exams and very limited time. I planned to use AI assistance heavily and be honest about that in the submission.  
+**What I learned:** The assignment rewards shipping and judgment, but it also explicitly allows AI tools if usage is disclosed honestly.  
+**Blockers / what I'm stuck on:** Exams limited the amount of candidate-directed build time I could spend.  
+**Plan for tomorrow:** Use AI to help narrow the product concept and scaffold the core flow.
 
-**Hours worked:** 4
+## Day 2 — 2026-05-08
+**Hours worked:** 0.1  
+**What I did:** Directed AI toward a focused product concept: a lightweight AI spend audit tool for founders, engineering managers, and finance/ops leads. I chose to keep the first screen as the utility itself rather than a long marketing page.  
+**What I learned:** The useful product wedge is not "AI dashboard"; it is a fast second opinion on messy AI spend.  
+**Blockers / what I'm stuck on:** I needed the implementation to avoid sounding like generic AI advice.  
+**Plan for tomorrow:** Push the generated implementation toward deterministic audit rules and traceable pricing assumptions.
 
-**What I did:**  
-Read and analyzed the full Credex assignment requirements in depth. Researched the product/business model behind AI infrastructure credits and clarified the purpose of the audit tool. Chose the name “ModelMeter,” initialized a Next.js + TypeScript + Tailwind project, connected GitHub, and created all required repository documentation files.
-
-**What I learned:**  
-The assignment heavily emphasizes entrepreneurial thinking, believable audit logic, product polish, and thoughtful documentation — not just coding ability.
-
-**Blockers / what I'm stuck on:**  
-Still deciding the exact structure of the audit engine and planning the landing page/user flow.
-
-**Plan for tomorrow:**  
-Design the landing page and begin implementing the AI spend input form.
-
-
-## Day 2 — 2026-05-09
-
-**Hours worked:** 6
-
-**What I did:**  
-Built the first working frontend MVP flow for ModelMeter using Next.js, TypeScript, TailwindCSS, and shadcn/ui. Implemented the homepage audit flow directly on the landing page instead of separating it into a dedicated audit route to reduce friction and make the tool feel more utility-focused. Added dynamic multi-tool form interactions, searchable tool selection UX, and a mock results page with savings visualization and recommendation cards.
-
-Refined the visual direction away from generic “AI startup” aesthetics toward a more minimal and trustworthy utility-product style inspired by products like iLovePDF and Linear.
-
-Set up GitHub Actions CI workflow and ensured lint/build checks pass successfully.
-
-**What I learned:**  
-The assignment is less about building a technically complex AI system and more about designing believable recommendation logic, product clarity, and convincing UX. I also realized that deterministic rule engines are likely more appropriate than LLM-based decision making for financial recommendations.
-
-**Blockers / what I'm stuck on:**  
-Still designing the audit engine architecture. Currently thinking through how to structure pricing metadata and recommendation rules cleanly without turning the system into unmaintainable hardcoded logic.
-
-**Plan for tomorrow:**  
-Build the real audit engine starting with structured pricing metadata for Claude, ChatGPT, and Cursor. Replace static mock results with dynamically generated recommendations and savings calculations.
-
-
-
-## Day 3 — 2026-05-10
-
-**Hours worked:** 0.5
-
-**What I did:**  
-Implemented the first real deterministic audit engine for ModelMeter and replaced the earlier static mock recommendations with dynamically generated audit results. Added structured pricing metadata and recommendation evaluation logic focused on SaaS spend optimization patterns such as overlapping assistant subscriptions, oversized collaboration plans, and duplicated tooling spend.
-
-Refined the recommendation wording to feel more operational and financially believable instead of overly AI-generated. Removed weaker pseudo-analytical elements like unsupported confidence scoring and shifted the product tone toward a more trustworthy finance/productivity style.
-
-Also improved the results presentation with clearer savings concentration breakdowns and more grounded AI-generated summaries.
-
-**What I learned:**  
-The biggest challenge is designing recommendation logic that feels credible and operationally realistic without overcomplicating the system. Deterministic evaluation combined with AI-generated explanation layers feels significantly more trustworthy than allowing LLMs to make the core financial decisions themselves.
-
-**Blockers / what I'm stuck on:**  
-The recommendation engine still needs more nuanced differentiation between overlapping tools and workflows so that recommendations feel less repetitive across providers.
-
-**Plan for tomorrow:**  
-Integrate Supabase for storing audit results and generating shareable result URLs. Begin implementing lead capture and persistence flow.
-
-
+## Day 3 — 2026-05-09
+**Hours worked:** 0.1  
+**What I did:** Reviewed AI-generated frontend and product-flow iterations. I steered the UI toward a calmer SaaS utility style and asked for inputs around tools, plans, spend, seats, team size, and use case.  
+**What I learned:** AI can generate polished-looking screens quickly, but the instructions have to be specific or the result starts to feel like a template.  
+**Blockers / what I'm stuck on:** The app still needed financially believable recommendations instead of only polished visuals.  
+**Plan for tomorrow:** Add structured pricing metadata and deterministic savings logic.
 
 ## Day 4 — 2026-05-10
+**Hours worked:** 0.1  
+**What I did:** Directed AI to implement the deterministic audit engine and keep LLMs out of the core financial math. I reviewed the main checks: plan fit, duplicated tools, oversized seats, enterprise overkill, API spend controls, and annual-vs-monthly spend mismatch.  
+**What I learned:** The audit is only trustworthy if the savings can be traced back to a rule, benchmark, or price assumption.  
+**Blockers / what I'm stuck on:** Some recommendation wording was still repetitive and needed more operational specificity.  
+**Plan for tomorrow:** Add persistence and shareable result URLs.
 
-**Hours worked:** 0.5
+## Day 5 — 2026-05-11
+**Hours worked:** 0.05  
+**What I did:** Used AI assistance to add Supabase persistence and dynamic `/results/[id]` pages. I checked the direction that public report data should not contain email or company identity details.  
+**What I learned:** A saved report URL makes the project feel much closer to a real acquisition tool than a temporary calculator.  
+**Blockers / what I'm stuck on:** Lead capture, transactional email, and PDF export still needed production-like handling.  
+**Plan for tomorrow:** Add post-results lead capture, Resend email, social previews, and PDF export.
 
-**What I did:**  
-Integrated Supabase persistence into ModelMeter and replaced the temporary static results route with dynamic shareable audit URLs. The audit flow now saves generated audit results, recommendations, savings calculations, and chart data into Supabase and redirects users to persistent `/results/[id]` pages.
+## Day 6 — 2026-05-12
+**Hours worked:** 0.1  
+**What I did:** Directed AI to add lead capture, Supabase `leads` schema, Resend email support, honeypot abuse protection, Open Graph previews, and PDF export. When the lead flow failed, I provided the actual Supabase error and corrected the schema path.  
+**What I learned:** AI-generated code still needs real error feedback. A concrete example was the invalid `timestz` PostgreSQL type, which had to be corrected to `timestamptz`.  
+**Blockers / what I'm stuck on:** The PDF needed to feel more readable and procurement-friendly.  
+**Plan for tomorrow:** Compare the repo against the PDF requirements and finish the submission docs.
 
-Implemented dynamic report loading so audit results survive refreshes and can be shared publicly through unique URLs without requiring authentication. Kept sensitive lead-related information out of the public report payload and focused the shared pages only on optimization findings, savings data, and recommendations.
-
-Also cleaned up the architecture around audit result types and database interactions to make the system feel more like a real SaaS utility instead of a frontend-only demo.
-
-**What I learned:**  
-Persistence and dynamic routing significantly change how “real” the product feels. The project now behaves much more like an actual SaaS workflow where generated reports can be revisited and shared instead of existing only in temporary frontend state.
-
-**Blockers / what I'm stuck on:**  
-Still need to implement lead capture, transactional email flow, and abuse protection. The recommendation engine could also become more nuanced in differentiating overlapping tool usage patterns between providers.
-
-**Plan for tomorrow:**  
-Implement lead capture flow with Supabase storage and transactional email support. Add basic abuse protection and start preparing the project for deployment.
+## Day 7 — 2026-05-13
+**Hours worked:** 0.05  
+**What I did:** Asked AI to read the assignment PDF, close missing documentation gaps, improve tests/CI coverage, refine the final disclosure, and avoid creating extra root-level files outside the required submission structure.  
+**What I learned:** The safest submission is direct: AI-assisted build, deterministic audit math, real limitations called out, and no fake interviews.  
+**Blockers / what I'm stuck on:** The remaining non-code blockers are real user interviews, the deployed URL, and the git-history requirement if the actual commit history does not meet five distinct days.  
+**Plan for tomorrow:** Submit only after adding the live URL, completing real interviews, and confirming git history meets the assignment's automated checks.

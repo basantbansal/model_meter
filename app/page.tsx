@@ -14,12 +14,9 @@ export default function Home() {
             <span className="text-sm font-semibold tracking-tight">ModelMeter</span>
           </Link>
 
-          <Link
-            href="#"
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm transition hover:text-foreground"
-          >
-            GitHub
-          </Link>
+          <span className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm">
+            Shareable reports
+          </span>
         </header>
 
         <section className="py-9 sm:py-12">

@@ -1,9 +1,28 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import { getSiteUrl } from "@/lib/site-url";
+
 export const metadata: Metadata = {
-  title: "ModelMeter",
-  description: "Find hidden waste in your AI stack.",
+  metadataBase: new URL(getSiteUrl()),
+  title: {
+    default: "ModelMeter",
+    template: "%s | ModelMeter",
+  },
+  description:
+    "Deterministic AI spend audits with shareable savings reports for modern teams.",
+  openGraph: {
+    title: "ModelMeter",
+    description:
+      "Deterministic AI spend audits with shareable savings reports for modern teams.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ModelMeter",
+    description:
+      "Deterministic AI spend audits with shareable savings reports for modern teams.",
+  },
 };
 
 export default function RootLayout({

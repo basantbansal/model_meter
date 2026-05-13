@@ -1,15 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  CalendarDays,
   CheckCircle2,
+  Download,
   MessageSquareText,
   Share2,
   TrendingDown,
 } from "lucide-react";
 
+import { LeadCaptureCard } from "@/components/lead-capture-card";
 import { ResultsCard } from "@/components/results-card";
 import { SavingsChart } from "@/components/savings-chart";
 import { Button } from "@/components/ui/button";
@@ -23,17 +25,50 @@ const currency = new Intl.NumberFormat("en-US", {
 
 export function ResultsDashboard({
   auditResult,
+  auditId,
   shareUrl,
 }: {
   auditResult: AuditResult;
+  auditId: string;
   shareUrl: string;
 }) {
+  const [shareMessage, setShareMessage] = useState("");
+  const hasSavings = auditResult.monthlySavings > 0;
+  const hasHighSavings = auditResult.monthlySavings > 500;
+  const findingCategories = new Set(
+    auditResult.findings.map((finding) => finding.category),
+  );
+  const operatingChecks = [
+    findingCategories.has("seat-efficiency") ||
+    findingCategories.has("premium-tier")
+      ? "Review seat assignment before renewal"
+      : null,
+    findingCategories.has("tool-overlap")
+      ? "Assign ownership for overlapping tools"
+      : null,
+    findingCategories.has("workflow-fit")
+      ? "Confirm tool fit against the primary workflow"
+      : null,
+    findingCategories.has("spend-normalization")
+      ? "Reconcile monthly versus annual billing"
+      : null,
+    findingCategories.has("enterprise-overkill")
+      ? "Validate enterprise controls before renewal"
+      : null,
+  ].filter((item): item is string => Boolean(item));
+  const checks =
+    operatingChecks.length > 0
+      ? operatingChecks
+      : ["Review active seats monthly", "Keep billing owners assigned"];
+
   async function copyShareUrl() {
     if (!navigator.clipboard) {
+      setShareMessage("Copy is not available in this browser.");
       return;
     }
 
     await navigator.clipboard.writeText(shareUrl);
+    setShareMessage("Report link copied.");
   }
 
   return (
@@ -53,9 +88,16 @@ export function ResultsDashboard({
               variant="outline"
               className="hidden bg-background sm:inline-flex"
               onClick={copyShareUrl}
+              aria-label="Copy shareable report link"
             >
               <Share2 className="size-4" />
               Share
+            </Button>
+            <Button asChild variant="outline" className="hidden bg-background sm:inline-flex">
+              <a href={`/api/reports/${auditId}/pdf`}>
+                <Download className="size-4" />
+                PDF
+              </a>
             </Button>
             <Button asChild variant="outline" className="bg-background">
               <Link href="/">
@@ -72,14 +114,17 @@ export function ResultsDashboard({
               <div>
                 <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-xs font-medium text-teal-800">
                   <TrendingDown className="size-3.5" />
-                  Savings found
+                  {hasSavings ? "Savings found" : "Benchmark review complete"}
                 </div>
                 <h1 className="max-w-2xl text-4xl font-semibold tracking-tight sm:text-5xl">
-                  You could save {currency.format(auditResult.monthlySavings)} per month.
+                  {hasSavings
+                    ? `You could save ${currency.format(auditResult.monthlySavings)} per month.`
+                    : "No major waste detected."}
                 </h1>
                 <p className="mt-4 max-w-xl text-sm leading-6 text-stone-500">
-                  Shareable AI spend report with savings, recommendations, and
-                  tool-level benchmarks.
+                  {hasSavings
+                    ? "Shareable AI spend report with savings, recommendations, and tool-level benchmarks."
+                    : "The report still includes operational checks and plan-fit context without forcing a savings claim."}
                 </p>
               </div>
 
@@ -123,6 +168,9 @@ export function ResultsDashboard({
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-sm">
+                  <caption className="sr-only">
+                    Tool-level current spend, projected spend, savings, and savings share.
+                  </caption>
                   <thead className="bg-stone-50 text-left text-xs font-medium text-stone-500">
                     <tr>
                       <th className="px-5 py-3">Tool</th>
@@ -175,22 +223,42 @@ export function ResultsDashboard({
           </div>
 
           <aside className="space-y-4">
+            <LeadCaptureCard
+              auditId={auditId}
+              teamSize={auditResult.input.teamSize}
+              monthlySavings={auditResult.monthlySavings}
+            />
+
+            {hasHighSavings ? (
+              <div className="rounded-2xl border border-teal-950 bg-teal-950 p-5 text-white shadow-xl shadow-stone-300/60">
+                <h2 className="text-lg font-semibold tracking-tight">
+                  High-savings case
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                  This audit found more than $500 per month in modeled savings.
+                  Credex can help review discounted credits and renewal options for
+                  the tools behind this report.
+                </p>
+                <Button asChild className="mt-5 h-11 w-full bg-white text-zinc-950 hover:bg-zinc-100">
+                  <a href="https://credex.rocks" target="_blank" rel="noreferrer">
+                    Book Credex consultation
+                  </a>
+                </Button>
+              </div>
+            ) : null}
+
             <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-stone-100">
                 <MessageSquareText className="size-5" />
               </div>
               <h2 className="text-lg font-semibold tracking-tight">
-                AI-generated summary
+                Audit summary
               </h2>
               <p className="mt-3 text-sm leading-6 text-stone-500">
                 {auditResult.summary}
               </p>
               <div className="mt-5 space-y-3 text-sm">
-                {[
-                  "Review inactive seats before renewals",
-                  "Set budget caps on API projects",
-                  "Consolidate duplicate assistant subscriptions",
-                ].map((item) => (
+                {checks.map((item) => (
                   <div key={item} className="flex items-center gap-2">
                     <CheckCircle2 className="size-4 text-teal-700" />
                     <span>{item}</span>
@@ -200,19 +268,37 @@ export function ResultsDashboard({
             </div>
 
             <div className="rounded-2xl border border-teal-950 bg-teal-950 p-5 text-white shadow-xl shadow-stone-300/60">
-              <div className="mb-4 flex size-10 items-center justify-center rounded-xl bg-white/10">
-                <CalendarDays className="size-5" />
-              </div>
               <h2 className="text-lg font-semibold tracking-tight">
-                High savings detected
+                Export or forward the report
               </h2>
               <p className="mt-3 text-sm leading-6 text-zinc-300">
-                Credex can help convert this audit into a 30-minute cost-control
-                plan for billing owners and engineering leads.
+                Use the PDF for procurement reviews or copy the saved report link for quick team discussion.
               </p>
-              <Button className="mt-5 h-11 w-full bg-white text-zinc-950 hover:bg-zinc-100">
-                Book Credex consultation
-              </Button>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                <Button asChild className="h-11 bg-white text-zinc-950 hover:bg-zinc-100">
+                  <a
+                    href={`/api/reports/${auditId}/pdf`}
+                    aria-label="Download ModelMeter PDF report"
+                  >
+                    <Download className="size-4" />
+                    Download PDF
+                  </a>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={copyShareUrl}
+                  className="h-11 border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                >
+                  <Share2 className="size-4" />
+                  Copy link
+                </Button>
+              </div>
+              {shareMessage ? (
+                <p className="mt-3 text-xs text-zinc-300" role="status">
+                  {shareMessage}
+                </p>
+              ) : null}
             </div>
           </aside>
         </section>

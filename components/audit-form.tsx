@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClipboardCheck, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -12,8 +12,9 @@ import { generateAuditSummary } from "@/lib/generate-summary";
 import {
   planOptions,
   primaryUseCases,
+  supportedTools,
   type AuditTool,
-} from "@/lib/mock-data";
+} from "@/lib/audit-options";
 import type { AuditInput, AuditUseCase, SupportedAuditTool } from "@/types/audit";
 
 function createTool(id: number): AuditTool {
@@ -26,6 +27,14 @@ function createTool(id: number): AuditTool {
   };
 }
 
+const draftStorageKey = "modelmeter:audit-draft";
+
+type AuditFormDraft = {
+  toolRows: AuditTool[];
+  teamSize: string;
+  useCase: string;
+};
+
 export function AuditForm() {
   const router = useRouter();
   const [toolRows, setToolRows] = useState<AuditTool[]>([createTool(1)]);
@@ -33,6 +42,69 @@ export function AuditForm() {
   const [useCase, setUseCase] = useState(primaryUseCases[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const draftHydratedRef = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const savedDraft = window.localStorage.getItem(draftStorageKey);
+
+      if (!savedDraft) {
+        draftHydratedRef.current = true;
+        return;
+      }
+
+      try {
+        const draft = JSON.parse(savedDraft) as Partial<AuditFormDraft>;
+
+        if (Array.isArray(draft.toolRows) && draft.toolRows.length > 0) {
+          setToolRows(
+            draft.toolRows.map((row, index) => ({
+              id: Number(row.id) || index + 1,
+              tool: supportedTools.includes(row.tool) ? row.tool : "Cursor",
+              plan:
+                supportedTools.includes(row.tool) &&
+                planOptions[row.tool].includes(row.plan)
+                  ? row.plan
+                  : "Pro",
+              spend: String(row.spend ?? ""),
+              seats: String(row.seats ?? "1"),
+            })),
+          );
+        }
+
+        if (typeof draft.teamSize === "string") {
+          setTeamSize(draft.teamSize);
+        }
+
+        if (
+          typeof draft.useCase === "string" &&
+          primaryUseCases.includes(draft.useCase)
+        ) {
+          setUseCase(draft.useCase);
+        }
+      } catch {
+        window.localStorage.removeItem(draftStorageKey);
+      } finally {
+        draftHydratedRef.current = true;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!draftHydratedRef.current) {
+      return;
+    }
+
+    const draft: AuditFormDraft = {
+      toolRows,
+      teamSize,
+      useCase,
+    };
+
+    window.localStorage.setItem(draftStorageKey, JSON.stringify(draft));
+  }, [teamSize, toolRows, useCase]);
 
   function updateTool(id: number, updates: Partial<AuditTool>) {
     setToolRows((currentRows) =>

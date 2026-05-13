@@ -21,7 +21,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Content and marketing", "Data analysis"],
+      idealUseCases: ["Content and marketing", "Data analysis", "Research"],
       codingFocused: false,
       usageIntensity: "light",
       enterpriseFocused: false,
@@ -47,7 +47,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Content and marketing", "Data analysis", "Engineering productivity"],
+      idealUseCases: ["Content and marketing", "Data analysis", "Engineering productivity", "Research", "Mixed usage"],
       codingFocused: false,
       usageIntensity: "standard",
       enterpriseFocused: false,
@@ -73,7 +73,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Engineering productivity", "Data analysis"],
+      idealUseCases: ["Engineering productivity", "Data analysis", "Research"],
       codingFocused: false,
       usageIntensity: "heavy",
       enterpriseFocused: false,
@@ -99,7 +99,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Company-wide AI access", "Engineering productivity", "Data analysis"],
+      idealUseCases: ["Company-wide AI access", "Engineering productivity", "Data analysis", "Research", "Mixed usage"],
       codingFocused: false,
       usageIntensity: "standard",
       enterpriseFocused: false,
@@ -153,7 +153,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Content and marketing", "Data analysis"],
+      idealUseCases: ["Content and marketing", "Data analysis", "Research"],
       codingFocused: false,
       usageIntensity: "light",
       enterpriseFocused: false,
@@ -179,7 +179,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Content and marketing", "Data analysis", "Engineering productivity"],
+      idealUseCases: ["Content and marketing", "Data analysis", "Engineering productivity", "Research", "Mixed usage"],
       codingFocused: false,
       usageIntensity: "standard",
       enterpriseFocused: false,
@@ -205,7 +205,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Engineering productivity", "Data analysis"],
+      idealUseCases: ["Engineering productivity", "Data analysis", "Research"],
       codingFocused: false,
       usageIntensity: "heavy",
       enterpriseFocused: false,
@@ -215,7 +215,7 @@ export const pricingMetadata = {
     {
       tool: "ChatGPT",
       planName: "Business",
-      monthlyPrice: 30,
+      monthlyPrice: 25,
       intendedTeamSize: { min: 2, max: 250 },
       features: {
         collaboration: true,
@@ -231,12 +231,12 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Company-wide AI access", "Product automation", "Data analysis"],
+      idealUseCases: ["Company-wide AI access", "Product automation", "Data analysis", "Research", "Mixed usage"],
       codingFocused: false,
       usageIntensity: "standard",
       enterpriseFocused: false,
       description:
-        "Collaborative workspace with admin controls, SSO/MFA, connectors, data controls, and business features.",
+        "Collaborative workspace with admin controls, SSO/MFA, connectors, data controls, business features, and fixed per-seat billing.",
     },
     {
       tool: "ChatGPT",
@@ -363,7 +363,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: false,
       },
-      idealUseCases: ["Engineering productivity", "Company-wide AI access"],
+      idealUseCases: ["Engineering productivity", "Company-wide AI access", "Mixed usage"],
       codingFocused: true,
       usageIntensity: "standard",
       enterpriseFocused: false,
@@ -389,7 +389,7 @@ export const pricingMetadata = {
         ipIndemnity: false,
         customRetention: true,
       },
-      idealUseCases: ["Engineering productivity", "Company-wide AI access"],
+      idealUseCases: ["Engineering productivity", "Company-wide AI access", "Mixed usage"],
       codingFocused: true,
       usageIntensity: "enterprise",
       enterpriseFocused: true,
@@ -545,6 +545,8 @@ export function findPlan(tool: string, planName: string): PlanMetadata | undefin
   return getPlansForTool(tool).find(
     (plan) =>
       plan.planName.toLowerCase() === normalizedPlan ||
-      (normalizedPlan === "individual" && plan.planName === "Pro"),
+      (normalizedPlan === "individual" && plan.planName === "Pro") ||
+      (tool === "Cursor" && normalizedPlan === "business" && plan.planName === "Teams") ||
+      (tool === "ChatGPT" && normalizedPlan === "team" && plan.planName === "Business"),
   );
 }
